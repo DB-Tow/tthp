@@ -4,6 +4,7 @@
 #include <string.h>
 
 int validateDuration(const char *token);
+int validateDate(const char *token, char *formattedDate);
 
 int main(int argc, char *argv[])
 {
@@ -15,8 +16,9 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	// Temporary validation variable
+	// Temporary validation variables
 	int duration_found = 0;
+	char date_found[11] = "";
 
 	// Check the argv[1] for a valid command
 	if (strcmp(argv[1], "log") == 0) {
@@ -26,11 +28,19 @@ int main(int argc, char *argv[])
 			if (givenTime > 0) {
 				duration_found = 1;
 				printf("A valid time format was found. Here is the total seconds: %d seconds.\n", givenTime);
+				printf("The original time given was: %s\n", argv[i]);
+			}
+			if (validateDate(argv[i], date_found) == 0) {
+				printf("A valid date format was found. The original date input: %s\n", argv[i]);
+				printf("The newly formatted date: %s\n", date_found);
 			}
 		}
 
 		if (duration_found == 0) {
 			printf("No valid time format was found.\n");
+		}
+		if (date_found[0] == '\0') {
+			printf("No valid date format was found.\n");
 		}
 	}
 
@@ -48,6 +58,8 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+// Validator Functions
 
 int validateDuration(const char *token)
 {
@@ -102,3 +114,89 @@ int validateDuration(const char *token)
 	else
 		return -1;
 }
+
+int validateDate(const char *token, char *formattedDate)
+{
+	if (strlen(token) != 10)
+		return -1;
+
+	char inputDate[11];
+
+	strncpy(inputDate, token, sizeof(inputDate) - 1);
+	// Explicitly null-terminate the array
+	inputDate[sizeof(inputDate) - 1] = '\0';
+
+	for (int i = 0; i < 10; i++) {
+		if (inputDate[i] == '/')
+			inputDate[i] = '-';
+		if ((inputDate[i] < '0' || inputDate[i] > '9') && (inputDate[i] != '-'))
+			return -1;
+	}
+	
+	int number1, number2, number3, consumedCount;
+	int month, day, year;
+
+	if (sscanf(inputDate, "%d%n-%d-%d", &number1, &consumedCount, &number2, &number3) == 3) {
+		if (consumedCount == 2) {
+			month = number1;
+			day = number2;
+			year = number3;
+		}
+
+		if (consumedCount == 4) {
+			year = number1;
+			month = number2;
+			day = number3;
+		}
+	}
+
+	else
+		return -1;
+
+	// Validating accurate date ranges //
+	
+	// Setting a leapYear variable. 0 indicates not a leap year. 1 indicates a leap year.
+	int leapYear = 0;
+	
+	// Month validation check
+	if (month < 1 || month > 12)
+		return -1;
+
+	// Year validation check	
+	// Only accepts time logs that were tracked after the start of 2026
+	if (year < 2026)
+		return -1;
+	// Check for leap year
+	if ((year % 400 == 0) || ((year % 4 == 0) && (year % 100 != 0)))
+		leapYear = 1;
+
+	// Day validation check
+	// Days in months array: Jan, Feb, Mar, Apr, May, Jun, July, Aug, Sep, Oct, Nov, Dec
+	int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+	// Adjust for February in leap years
+	if (leapYear == 1)
+		daysInMonth[1] = 29;
+	// Check if it is a valid date for the given month
+	if ((day < 1) || (day > daysInMonth[month - 1]))
+		return -1;
+
+	
+	snprintf(formattedDate, 11, "%04d-%02d-%02d", year, month, day);
+
+	return 0;
+}
+
+int validateTitle(const char *token, char *title)
+{
+	if (token[0] == '-' && (token[1] != '-')) {
+		strncpy(title, (token + 1), (strlen(token) - 1));
+		if (strlen(title) == 0)
+			return -1;
+		else
+			return 0;
+	}
+	else
+		return -1;
+}
+
