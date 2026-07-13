@@ -5,6 +5,7 @@
 
 int validateDuration(const char *token);
 int validateDate(const char *token, char *formattedDate);
+int validateTitle(const char *token, char *title);
 
 int main(int argc, char *argv[])
 {
@@ -19,6 +20,7 @@ int main(int argc, char *argv[])
 	// Temporary validation variables
 	int duration_found = 0;
 	char date_found[11] = "";
+	char title_found[100] = "";
 
 	// Check the argv[1] for a valid command
 	if (strcmp(argv[1], "log") == 0) {
@@ -34,6 +36,9 @@ int main(int argc, char *argv[])
 				printf("A valid date format was found. The original date input: %s\n", argv[i]);
 				printf("The newly formatted date: %s\n", date_found);
 			}
+			if (validateTitle(argv[i], title_found) == 0) {
+				printf("A valid title was found. The title is: %s\n", title_found);
+			}
 		}
 
 		if (duration_found == 0) {
@@ -41,6 +46,9 @@ int main(int argc, char *argv[])
 		}
 		if (date_found[0] == '\0') {
 			printf("No valid date format was found.\n");
+		}
+		if (title_found[0] == '\0') {
+			printf("No valid title was found.\n");
 		}
 	}
 
@@ -59,8 +67,9 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-// Validator Functions
+// Validator Functions //
 
+// Validate Duration Function
 int validateDuration(const char *token)
 {
 	int total_seconds = 0;
@@ -115,6 +124,7 @@ int validateDuration(const char *token)
 		return -1;
 }
 
+// Validate Date Function
 int validateDate(const char *token, char *formattedDate)
 {
 	if (strlen(token) != 10)
@@ -153,7 +163,7 @@ int validateDate(const char *token, char *formattedDate)
 	else
 		return -1;
 
-	// Validating accurate date ranges //
+	// Validating accurate date ranges 
 	
 	// Setting a leapYear variable. 0 indicates not a leap year. 1 indicates a leap year.
 	int leapYear = 0;
@@ -187,10 +197,25 @@ int validateDate(const char *token, char *formattedDate)
 	return 0;
 }
 
+// Validate Title Function //
 int validateTitle(const char *token, char *title)
 {
 	if (token[0] == '-' && (token[1] != '-')) {
-		strncpy(title, (token + 1), (strlen(token) - 1));
+		// Check if the input exceeds the maximum title length.
+		// Maximum title length is 100 characters.
+
+		int tokenSize = (strlen(token) - 1);
+	
+		// Need to make max title length a symbolic constant not a magic number
+		if (tokenSize > 100) {
+			return -1;
+		}
+		strncpy(title, (token + 1), tokenSize);
+
+		// Explicitly null terminate the string
+		title[tokenSize] = '\0';
+
+		// Ensure title is not empty "-"
 		if (strlen(title) == 0)
 			return -1;
 		else
@@ -199,4 +224,3 @@ int validateTitle(const char *token, char *title)
 	else
 		return -1;
 }
-
