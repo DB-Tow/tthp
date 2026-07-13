@@ -3,9 +3,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_COMMENTS 10
+#define COMMENT_LENGTH 501
+
+
 int validateDuration(const char *token);
 int validateDate(const char *token, char *formattedDate);
 int validateTitle(const char *token, char *title);
+int validateComment(const char *token, char (*comment_out)[COMMENT_LENGTH], int count);
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +26,9 @@ int main(int argc, char *argv[])
 	int duration_found = 0;
 	char date_found[11] = "";
 	char title_found[100] = "";
+
+	char comments[MAX_COMMENTS][COMMENT_LENGTH];
+	int comment_count = 0;
 
 	// Check the argv[1] for a valid command
 	if (strcmp(argv[1], "log") == 0) {
@@ -39,6 +47,11 @@ int main(int argc, char *argv[])
 			if (validateTitle(argv[i], title_found) == 0) {
 				printf("A valid title was found. The title is: %s\n", title_found);
 			}
+
+			if (validateComment(argv[i], comments, comment_count) == 0) {
+				printf("A valid comment was found. The comment is %s\n", comments[comment_count]);
+				comment_count++;
+			}
 		}
 
 		if (duration_found == 0) {
@@ -50,6 +63,17 @@ int main(int argc, char *argv[])
 		if (title_found[0] == '\0') {
 			printf("No valid title was found.\n");
 		}
+		if (comment_count == 0) {
+			printf("No valid comments were found.\n");
+		}
+
+		else {
+			// Print the comments table
+			printf("\nThe Comments Table:\n");
+			for (int j = 0; j < comment_count; j++)
+				printf("%s\n", comments[j]);
+		}
+
 	}
 
 	else if (strcmp(argv[1], "list") == 0) {
@@ -220,6 +244,39 @@ int validateTitle(const char *token, char *title)
 			return -1;
 		else
 			return 0;
+	}
+	else
+		return -1;
+}
+
+int validateComment(const char *token, char (*comment_out)[COMMENT_LENGTH], int count)
+{
+	if ((token[0] == '-') && (token[1] == '-')) {
+		// Comment capacity check -- Max comments number is 10
+		if (count < MAX_COMMENTS) {
+			int tokenSize = (strlen(token) - 2);
+
+			// Comment length check -- Max character length for comments is 500
+			if (tokenSize > COMMENT_LENGTH) {
+				// Need more robust error handling for different error reasons
+				// commment length vs max number of comments etc.
+				return -1;
+			}
+
+			strncpy(comment_out[count], (token + 2), tokenSize);
+
+			// Explicitly null terminate the string
+			comment_out[count][tokenSize] = '\0';
+
+			// Ensure the comment is not empty "--"
+			if (strlen(comment_out[count]) == 0)
+				return -1;
+			else
+				return 0;
+		}
+
+		else
+			return -1;
 	}
 	else
 		return -1;
