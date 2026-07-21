@@ -3,9 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_COMMENTS 10
-#define COMMENT_LENGTH 501
-
+#include "log.h"
 
 int validateDuration(const char *token);
 int validateDate(const char *token, char *formattedDate);
@@ -22,58 +20,61 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	// Temporary validation variables
-	int duration_found = 0;
-	char date_found[11] = "";
-	char title_found[100] = "";
+	// Struct creation and initialization
+	struct logData entry = {
+		.seconds_logged = 0,
+		.date = "",
+		.title = "",
+		.category = "",
+		.comment_count = 0
+	};
 
-	char comments[MAX_COMMENTS][COMMENT_LENGTH];
-	int comment_count = 0;
+
 
 	// Check the argv[1] for a valid command
 	if (strcmp(argv[1], "log") == 0) {
 		printf("The log command was entered.\n");
 		for (int i = 2; i < argc ; i++) {
-			int givenTime = validateDuration(argv[i]);
-			if (givenTime > 0) {
-				duration_found = 1;
-				printf("A valid time format was found. Here is the total seconds: %d seconds.\n", givenTime);
-				printf("The original time given was: %s\n", argv[i]);
+			int timeToken = validateDuration(argv[i]);
+			if ((timeToken > 0) && (entry.seconds_logged == 0)) {
+				entry.seconds_logged = timeToken;
+				printf("A valid duration was found. The original time input was: %s\n", argv[i]);
+				printf("The duration amount in seconds that will be logged is: %d\n", entry.seconds_logged);
 			}
-			if (validateDate(argv[i], date_found) == 0) {
+				
+			if ((entry.date[0] == '\0') && (validateDate(argv[i], entry.date) == 0)) {
 				printf("A valid date format was found. The original date input: %s\n", argv[i]);
-				printf("The newly formatted date: %s\n", date_found);
+				printf("The newly formatted date: %s\n", entry.date);
 			}
-			if (validateTitle(argv[i], title_found) == 0) {
-				printf("A valid title was found. The title is: %s\n", title_found);
+			if ((entry.title[0] == '\0') && (validateTitle(argv[i], entry.title) == 0)) {
+				printf("A valid title was found. The title is: %s\n", entry.title);
 			}
 
-			if (validateComment(argv[i], comments, comment_count) == 0) {
-				printf("A valid comment was found. The comment is %s\n", comments[comment_count]);
-				comment_count++;
+			if (validateComment(argv[i], entry.comments, entry.comment_count) == 0) {
+				printf("A valid comment was found. The comment is %s\n", entry.comments[entry.comment_count]);
+				entry.comment_count++;
+				printf("Number of comments is: %d\n", entry.comment_count);
 			}
 		}
 
-		if (duration_found == 0) {
-			printf("No valid time format was found.\n");
+		// Validate mandatory arguments
+		if (entry.seconds_logged == 0) {
+			printf("No valid time was given\n");
+			return 0;
 		}
-		if (date_found[0] == '\0') {
-			printf("No valid date format was found.\n");
-		}
-		if (title_found[0] == '\0') {
-			printf("No valid title was found.\n");
-		}
-		if (comment_count == 0) {
-			printf("No valid comments were found.\n");
-		}
-
-		else {
-			// Print the comments table
-			printf("\nThe Comments Table:\n");
-			for (int j = 0; j < comment_count; j++)
-				printf("%s\n", comments[j]);
+		if (entry.date[0] == '\0') {
+			printf("No valid date was given\n");
+			// Need to add functionality for this
+			printf("If no valid date is given the default is set to the current date\n");
+			// For now we will accept no dates
 		}
 
+		if (entry.title[0] == '\0') {
+			printf("No valid title was given. This is a required field!\n");
+			return 0;
+		}
+		// Comments are not mandatory
+		// Neither is category for right now
 	}
 
 	else if (strcmp(argv[1], "list") == 0) {
@@ -231,7 +232,7 @@ int validateTitle(const char *token, char *title)
 		int tokenSize = (strlen(token) - 1);
 	
 		// Need to make max title length a symbolic constant not a magic number
-		if (tokenSize > 100) {
+		if (tokenSize > (TITLE_LENGTH - 1)) {
 			return -1;
 		}
 		strncpy(title, (token + 1), tokenSize);
@@ -257,7 +258,7 @@ int validateComment(const char *token, char (*comment_out)[COMMENT_LENGTH], int 
 			int tokenSize = (strlen(token) - 2);
 
 			// Comment length check -- Max character length for comments is 500
-			if (tokenSize > COMMENT_LENGTH) {
+			if (tokenSize > (COMMENT_LENGTH - 1)) {
 				// Need more robust error handling for different error reasons
 				// commment length vs max number of comments etc.
 				return -1;
